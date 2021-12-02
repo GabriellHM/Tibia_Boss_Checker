@@ -1,5 +1,5 @@
 from urllib.request import urlopen, Request
-import sqlite3, time, datetime
+import sqlite3, time, datetime, logging
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 #connecting to the sql database
 sql_connection = sqlite3.connect("data.db")
 cursor = sql_connection.cursor()
+lines_added = 0
 
 
 #getting the servers' names
@@ -58,7 +59,7 @@ def get_creatures(server):
     driver.get('https://www.tibia.com/community/?subtopic=killstatistics')
 
     #waiting for the page to fully load
-    time.sleep(6)
+    time.sleep(4)
 
     #finding the select element and selecting the server
     select = Select(driver.find_element(By.TAG_NAME, 'select'))
@@ -69,7 +70,7 @@ def get_creatures(server):
         /html/body/div[4]/div[3]/div[3]/div[5]/div/div/form/div/table/tbody/tr/td/div/table/tbody/tr/td[3]/div/div/input""").click()
 
     #waiting for the new elements to load
-    time.sleep(6)
+    time.sleep(4)
 
     #getting the html for the table element
     bs = BeautifulSoup(driver.find_element(By.ID, 'KillStatisticsTable').get_attribute('innerHTML'), 'html.parser')
@@ -120,11 +121,10 @@ def get_creatures(server):
     #closing the browser
     driver.close()
 
-    print(f'Done collecting data in {time.perf_counter() - start_time} s.')
+    print(f'Done collecting data in {(time.perf_counter() - start_time):02f} s.')
     update_creatures(data)  #updating the creatures table in the database (if there's new creatures)
     update_kills(data, server) #updating the kills table in the database
     
-
 #updating the creature table in database
 def update_creatures(data):
 
@@ -148,11 +148,12 @@ def update_creatures(data):
                 """, (key,))
 
     sql_connection.commit()
-    print(f'Done updating in {time.perf_counter() - start_time} s.')
+    print(f'Done updating in {(time.perf_counter() - start_time):02f} s.')
 
 #updating the kills table in database
 def update_kills(data, server):
 
+    global lines_added
     start_time = time.perf_counter()
     print('Updating kills\' table...')
 
@@ -191,8 +192,10 @@ def update_kills(data, server):
                         VALUES (?, ?, ?, ?)
                 """, (server_id, creature_id, data['date'], data[key]))
 
+                lines_added += 1
+
     sql_connection.commit()
-    print(f'Done updating kills table in {time.perf_counter() - start_time} s')
+    print(f'Done updating kills table in {(time.perf_counter() - start_time):02f} s')
 
 #table creation
 def create_tables():
@@ -230,11 +233,14 @@ def delete_tables():
 
 #main web_scraper code
 def main():
+
+    global lines_added
+
     #updating the servers table in the database
     print('Updating the servers\' table...')
     init_time = time.perf_counter()
     get_servers()  
-    print(f'Servers\' table updated in {(time.perf_counter() - init_time)} s')
+    print(f'Servers\' table updated in {(time.perf_counter() - init_time):02f} s')
 
     #getting the list of servers from the database
     cursor.execute("""
@@ -246,7 +252,21 @@ def main():
     for server in server_list:
         start_time = time.perf_counter()
         get_creatures(server)
-        print(f'All done with {server}. Took {time.perf_counter() - start_time} s.\nWaiting 15 seconds before next server...')
+        print(f'All done with {server}. Took {(time.perf_counter() - start_time):02f} s.\nWaiting 15 seconds before next server...')
         time.sleep(15)
 
-main()
+    final_time = time.perf_counter() - init_time
+    kills_date = datetime.datetime.strftime((datetime.datetime.now() - datetime.timedelta(days=1)), '%d/%m/%Y')
+
+    #setting up logging
+    log = 'scrapper.log'
+    logging.basicConfig(
+            filename=log, 
+            level=logging.DEBUG, 
+            format='%(asctime)s %(message)s', 
+            datefmt='%d/%m/%Y %H:%M:%S'
+            )
+    logging.info(f'{lines_added} lines added in {final_time:02f} seconds. Kills\' referece: {kills_date}.')
+
+if __name__ == '__main__':
+    main()

@@ -116,13 +116,14 @@ def get_creatures(server):
             if exit_loop == True:    #exiting the loop early instead of running thru regular creatures
                 break
     
+
+    #closing the browser
+    driver.close()
+
     print(f'Done collecting data in {time.perf_counter() - start_time} s.')
     update_creatures(data)  #updating the creatures table in the database (if there's new creatures)
     update_kills(data, server) #updating the kills table in the database
     
-
-    #closing the browser
-    driver.close()
 
 #updating the creature table in database
 def update_creatures(data):

@@ -121,7 +121,7 @@ def get_creatures(server):
     #closing the browser
     driver.close()
 
-    print(f'Done collecting data in {(time.perf_counter() - start_time):02f} s.')
+    print(f'Done collecting data in {(time.perf_counter() - start_time):.2f} s.')
     update_creatures(data)  #updating the creatures table in the database (if there's new creatures)
     update_kills(data, server) #updating the kills table in the database
     
@@ -148,7 +148,7 @@ def update_creatures(data):
                 """, (key,))
 
     sql_connection.commit()
-    print(f'Done updating in {(time.perf_counter() - start_time):02f} s.')
+    print(f'Done updating in {(time.perf_counter() - start_time):.2f} s.')
 
 #updating the kills table in database
 def update_kills(data, server):
@@ -195,7 +195,7 @@ def update_kills(data, server):
                 lines_added += 1
 
     sql_connection.commit()
-    print(f'Done updating kills table in {(time.perf_counter() - start_time):02f} s')
+    print(f'Done updating kills table in {(time.perf_counter() - start_time):.2f} s')
 
 #table creation
 def create_tables():
@@ -240,7 +240,7 @@ def main():
     print('Updating the servers\' table...')
     init_time = time.perf_counter()
     get_servers()  
-    print(f'Servers\' table updated in {(time.perf_counter() - init_time):02f} s')
+    print(f'Servers\' table updated in {(time.perf_counter() - init_time):.2f} s')
 
     #getting the list of servers from the database
     cursor.execute("""
@@ -252,7 +252,7 @@ def main():
     for server in server_list:
         start_time = time.perf_counter()
         get_creatures(server)
-        print(f'All done with {server}. Took {(time.perf_counter() - start_time):02f} s.\nWaiting 15 seconds before next server...')
+        print(f'All done with {server}. Took {(time.perf_counter() - start_time):.2f} s.\nWaiting 15 seconds before next server...')
         time.sleep(15)
 
     final_time = time.perf_counter() - init_time
@@ -266,7 +266,7 @@ def main():
             format='%(asctime)s %(message)s', 
             datefmt='%d/%m/%Y %H:%M:%S'
             )
-    logging.info(f'{lines_added} lines added in {final_time:02f} seconds. Kills\' referece: {kills_date}.')
+    logging.info(f'{lines_added} lines added in {final_time:.2f} seconds. Kills\' referece: {kills_date}.')
 
 if __name__ == '__main__':
     main()

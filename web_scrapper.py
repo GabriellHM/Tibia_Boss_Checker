@@ -11,7 +11,6 @@ sql_connection = sqlite3.connect("data.db")
 cursor = sql_connection.cursor()
 lines_added = 0
 
-
 #getting the servers' names
 def get_servers():
 
@@ -30,10 +29,12 @@ def get_servers():
         SELECT * FROM servers
     """)
     server_names = [tuple[1] for tuple in cursor.fetchall()]
+    current_servers = []
 
     #iterating over the servers found thru scrapping
     for s in lines:
         if s.text != ("(choose world)"): #ignore the (choose world) select option
+            current_servers.append(s.text)
             if s.text in server_names: #if the server is already in the database, ignore
                 next
             else: #if it's not in the database: insert it to the database
@@ -43,6 +44,7 @@ def get_servers():
                 """)
 
     sql_connection.commit()
+    return current_servers
 
 #getting the kill data
 def get_creatures(server):
@@ -239,17 +241,11 @@ def main():
     #updating the servers table in the database
     print('Updating the servers\' table...')
     init_time = time.perf_counter()
-    get_servers()  
+    current_servers = get_servers()  
     print(f'Servers\' table updated in {(time.perf_counter() - init_time):.2f} s')
 
-    #getting the list of servers from the database
-    cursor.execute("""
-            SELECT server_name FROM servers
-    """)
-    server_list = [tuple[0] for tuple in cursor.fetchall()]
-
     #running the web scrapper script for every server
-    for server in server_list:
+    for server in current_servers:
         start_time = time.perf_counter()
         get_creatures(server)
         print(f'All done with {server}. Took {(time.perf_counter() - start_time):.2f} s.\nWaiting 15 seconds before next server...')

@@ -72,11 +72,16 @@ def get_creatures(server):
         /html/body/div[4]/div[3]/div[3]/div[5]/div/div/form/div/table/tbody/tr/td/div/table/tbody/tr/td[3]/div/div/input""").click()
 
     #waiting for the new elements to load
-    time.sleep(4)
+    time.sleep(3)
 
-    #getting the html for the table element
-    bs = BeautifulSoup(driver.find_element(By.ID, 'KillStatisticsTable').get_attribute('innerHTML'), 'html.parser')
-    
+    while True:
+        try:
+            #getting the html for the table element
+            bs = BeautifulSoup(driver.find_element(By.ID, 'KillStatisticsTable').get_attribute('innerHTML'), 'html.parser')
+            break
+        except:
+            time.sleep(1)
+
     #filtering the table lines
     tr = bs.find_all('tr')
 
